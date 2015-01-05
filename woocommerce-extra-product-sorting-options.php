@@ -2,12 +2,11 @@
 /**
  * Plugin Name: WooCommerce Extra Product Sorting Options
  * Plugin URI: http://www.skyverge.com/product/woocommerce-extra-product-sorting-options/
- * Description: Rename default sorting and optionally add alphabetical, on sale, and random sorting.
+ * Description: Rename default sorting and optionally extra product sorting options.
  * Author: SkyVerge
  * Author URI: http://www.skyverge.com/
- * Version: 1.2.0
- * Text Domain: woocommerce-extra-product-sorting-options
- * Domain Path: /i18n/languages/
+ * Version: 2.0.0
+ * Text Domain: wc-extra-sorting-options
  *
  * Copyright: (c) 2012-2014 SkyVerge, Inc. (info@skyverge.com)
  *
@@ -27,248 +26,262 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 /**
  * Plugin Description
  *
- * Rename default sorting option - helpful if custom sorting used.
- * Add alphabetical sorting options and random sorting options to shop pages.
+ * Rename default sorting option - helpful if custom sorting is used.
+ * Adds sorting by name, on sale, featured, availability, and random to shop pages.
  *
  */
+class WC_Extra_Sorting_Options {
+	
+	
+	const VERSION = '2.0.0';
+	
+	
+	public function __construct() {
+	
+		// modify product sorting settings
+		add_filter( 'woocommerce_catalog_orderby', array( $this, 'modify_sorting_settings' ) );
+		
+		// add new sorting options to orderby dropdown
+		add_filter( 'woocommerce_default_catalog_orderby_options', array( $this, 'modify_sorting_settings' ) );
+		
+		// add new product sorting arguments
+		add_filter( 'woocommerce_get_catalog_ordering_args', array( $this, 'add_new_shop_ordering_args' ) );
+		
+		
+		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+		
+			// add settings
+			add_filter( 'woocommerce_product_settings', array( $this, 'add_settings' ) );
+			
+			// run every time
+			$this->install();
+		}
+	}
+	
+	
+	/**
+	 *Add Settings to WooCommerce Settings > Products page after "Default Product Sorting" setting
+	 *
+	 * @since 1.0.0
+	 */
+	public function add_settings( $settings ) {
 
-/**
- *Add Settings to WooCommerce Settings > Products page after "Default Product Sorting" setting
- *
- * @since 1.0.0
- */
-function skyverge_wc_extra_sorting_options_add_settings( $settings ) {
+		$updated_settings = array();
 
-	$updated_settings = array();
+		foreach ( $settings as $setting ) {
 
-	foreach ( $settings as $setting ) {
+			$updated_settings[] = $setting;
 
-		$updated_settings[] = $setting;
+			if ( isset( $setting['id'] ) && 'woocommerce_default_catalog_orderby' === $setting['id'] ) {
 
-		if ( isset( $setting['id'] ) && 'woocommerce_default_catalog_orderby' === $setting['id'] ) {
+				$new_settings = array(
+					array(
+						'title'    => __( 'New Default Sorting Label', 'wc-extra-sorting-options' ),
+						'id'       => 'wc_rename_default_sorting',
+						'type'     => 'text',
+						'default'  => '',
+						'desc_tip' => __( 'If desired, enter a new name for the default sorting option, e.g., &quot;Our Sorting&quot;', 'wc-extra-sorting-options' ),
+					),
+					array(
+						'name'     => __( 'Add Product Sorting:', 'wc-extra-sorting-options' ),
+						'desc_tip' => __( 'Select sorting options to add to your shop. "Available Stock" sorts products with the most stock first.', 'wc-extra-sorting-options' ),
+						'desc'     => '<br/>' . __( '&quot;On-sale First&quot; shows simple products on sale first; <a href="https://wordpress.org/plugins/woocommerce-extra-product-sorting-options/faq/" target="_blank">see documentation</a> for more details.', 'wc-extra-sorting-options' ),
+						'id'       => 'wc_extra_product_sorting_options',
+						'type'     => 'multiselect',
+						'class'    => 'chosen_select',
+						'options'  => array(
+							'alphabetical'   => __( 'Name: A to Z', 'wc-extra-sorting-options' ),
+							'reverse_alpha'  => __( 'Name: Z to A', 'wc-extra-sorting-options' ),
+							'by_stock'   	 => __( 'Available Stock', 'wc-extra-sorting-options' ),
+							'featured_first' => __( 'Featured First', 'wc-extra-sorting-options' ),
+							'on_sale_first'  => __( 'On-sale First', 'wc-extra-sorting-options' ),
+							'randomize'      => __( 'Random', 'wc-extra-sorting-options' ),
+						),
+						'default'  => '',
+					),
+				);
 
-			$new_settings = array(
-				array(
-					'title'    => __( 'New Default Sorting Label', 'woocommerce' ),
-					'id'       => 'wc_rename_default_sorting',
-					'type'     => 'text',
-					'default'  => '',
-					'desc_tip' => __( 'If desired, enter a new name for the default sorting option, e.g., &quot;Our Sorting&quot;', 'woocommerce' ),
-				),
-				array(
-					'title'         => __( 'Add Product Sorting Options', 'woocommerce' ),
-					'desc'          => __( 'Alphabetical product sorting', 'woocommerce' ),
-					'id'            => 'wc_alphabetical_product_sorting',
-					'default'       => 'no',
-					'type'          => 'checkbox',
-					'checkboxgroup' => 'start'
-				),
-				array(
-					'desc'          => __( 'Reverse alphabetical sorting', 'woocommerce' ),
-					'id'            => 'wc_reverse_alphabetical_product_sorting',
-					'default'       => 'no',
-					'type'          => 'checkbox',
-					'checkboxgroup' => ''
-				),
-				array(
-					'desc'          => __( 'On-sale sorting', 'woocommerce' ),
-					'id'            => 'wc_on_sale_product_sorting',
-					'default'       => 'no',
-					'type'          => 'checkbox',
-					'checkboxgroup' => ''
-				),
-				array(
-					'desc'          => __( 'Random product sorting', 'woocommerce' ),
-					'id'            => 'wc_random_product_sorting',
-					'default'       => 'no',
-					'type'          => 'checkbox',
-					'checkboxgroup' => 'end'
-				),
+				$updated_settings = array_merge( $updated_settings, $new_settings );
+		
+			}
+		}
+		
+		return $updated_settings;
+	}
+	
+	
+	
+	/**
+	 * Change "Default Sorting" to custom name and add new sorting options; added to admin + frontend dropdown
+	 *
+	 * @since 2.0.0
+	 */
+	public function modify_sorting_settings( $sortby ) {
+	
+		$new_default_name = get_option( 'wc_rename_default_sorting' );
+
+		if ( $new_default_name ) {
+			$sortby = str_replace( "Default sorting", $new_default_name, $sortby );
+		}
+		
+		$new_sorting_options = get_option('wc_extra_product_sorting_options', array() );
+	
+		foreach( $new_sorting_options as $option ) {
+	
+			switch( $option ) {
+		
+				case 'alphabetical':
+					$sortby['alphabetical'] = __( 'Sort by name: A to Z', 'wc-extra-sorting-options' );
+					break;
+				
+				case 'reverse_alpha':
+					$sortby['reverse_alpha'] = __( 'Sort by name: Z to A', 'wc-extra-sorting-options' );
+					break;
+				
+				case 'by_stock':
+					$sortby['by_stock'] = __( 'Sort by availability', 'wc-extra-sorting-options' );
+					break;
+					
+				case 'on_sale_first':
+					$sortby['on_sale_first'] = __( 'Show sale items first', 'wc-extra-sorting-options' );
+					break;
+			
+				case 'featured_first':
+					$sortby['featured_first'] = __( 'Show featured items first', 'wc-extra-sorting-options' );
+					break;
+				
+				case 'randomize':
+					$sortby['random_list'] = __( 'Sort by: random order', 'wc-extra-sorting-options' );
+					break;
+				 
+			}
+		
+		}
+	
+		return $sortby;
+	}
+
+
+	/**
+	 * Add sorting option to WC sorting arguments
+	 *
+	 * @since 2.0.0
+	*/
+	public function add_new_shop_ordering_args( $sort_args ) {
+		
+		$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
+
+		switch( $orderby_value ) {
+	
+			case 'alphabetical':
+				$sort_args['orderby'] = 'title';
+				$sort_args['order'] = 'asc';
+				break;
+		
+			case 'reverse_alpha':
+				$sort_args['orderby']  = 'title';
+				$sort_args['order']    = 'desc';
+				$sort_args['meta_key'] = '';
+				break;
+				
+			case 'by_stock':
+				$sort_args['orderby'] = 'meta_value_num';
+				$sort_args['order'] = 'desc';
+				$sort_args['meta_key'] = '_stock';
+				break;
+				
+								
+			case 'on_sale_first':
+				$sort_args['orderby'] = 'meta_value_num';
+				$sort_args['order'] = 'desc';
+				$sort_args['meta_key'] = '_sale_price';
+				break;
+				
+			case 'featured_first':
+				$sort_args['orderby'] = 'meta_value';
+				$sort_args['order'] = 'desc';
+				$sort_args['meta_key'] = '_featured';
+				break;
+				
+			case 'randomize':
+				$sort_args['orderby'] = 'rand';
+				$sort_args['order'] = '';
+				$sort_args['meta_key'] = '';
+				break;
+		
+		}
+	
+		return $sort_args;
+	}
+	
+	
+	/** Lifecycle methods ******************************************************/
+	
+	
+	/**
+	 * Run every time.  Used since the activation hook is not executed when updating a plugin
+	 *
+	 * @since 2.0.0
+	 */
+	private function install() {
+		
+		// get current version to check for upgrade
+		$installed_version = get_option( 'wc_extra_sorting_options_version' );
+		
+		// force upgrade to 2.0.0, prior versions did not have version option set
+		if ( ! $installed_version && ! get_option( 'wc_extra_product_sorting_options' ) ) {
+			
+			$this->upgrade( '1.2.0' );
+		}
+		
+		// upgrade if installed version lower than plugin version
+		if ( -1 === version_compare( $installed_version, self::VERSION ) ) {
+			$this->upgrade( $installed_version );
+		}
+	}
+	
+	
+	/**
+	 * Perform any version-related changes.
+	 *
+	 * @since 2.0.0
+	 * @param int $installed_version the currently installed version of the plugin
+	 */
+	private function upgrade( $installed_version ) {
+		
+		// upgrade from 1.2.0 to 2.0.0
+		if ( '1.2.0' === $installed_version ) {
+		
+			$old_options = array(
+				'wc_alphabetical_product_sorting' => 'alphabetical',
+				'wc_reverse_alphabetical_product_sorting' => 'reverse_alpha',
+				'wc_on_sale_product_sorting' => 'on_sale_first',
+				'wc_random_product_sorting' => 'randomize',
 			);
-
-			$updated_settings = array_merge( $updated_settings, $new_settings );
+			
+			$new_options = array();
+			
+			foreach ( $old_options as $old_key => $new_key ) {
+			
+				if ( 'yes' === get_option( $old_key ) ) {
+				
+					$new_options[] = $new_key;
+				}
+			}
+			
+			update_option( 'wc_extra_product_sorting_options', $new_options );
 		}
+		
+		// update the installed version option
+		update_option( 'wc_extra_sorting_options_version', self::VERSION );
 	}
-	return $updated_settings;
-}
-add_filter( 'woocommerce_product_settings', 'skyverge_wc_extra_sorting_options_add_settings' );
+
+} // end \WC_Extra_Sorting_Options class
 
 
 /**
- * Change "Default Sorting" to custom name on shop page and in WC Product Settings
- *
- * @since 1.0.0
-*/
-
-function skyverge_change_default_sorting_name( $catalog_orderby ) {
-	$new_default_name = get_option('wc_rename_default_sorting');
-
-	if($new_default_name == '') {
-		return $catalog_orderby;
-	} else {
-		$catalog_orderby = str_replace("Default sorting", $new_default_name, $catalog_orderby);
-		return $catalog_orderby;
-	}
-}
-add_filter( 'woocommerce_catalog_orderby', 'skyverge_change_default_sorting_name' );
-add_filter( 'woocommerce_default_catalog_orderby_options', 'skyverge_change_default_sorting_name' );
-
-
-/**
- * Add Alphabetical sorting option to WC Default Product Sorting / shop pages if enabled
- *
- * @since 1.0.0
-*/
-function skyverge_alphabetical_woocommerce_shop_ordering( $sort_args ) {
-
-	$alphabetical_enabled = get_option('wc_alphabetical_product_sorting');
-
-	if($alphabetical_enabled == 'yes') {
-		$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
-
-		if ( 'alphabetical' == $orderby_value ) {
-			$sort_args['orderby'] = 'title';
-			$sort_args['order'] = 'asc';
-			$sort_args['meta_key'] = '';
-		}
-
-		return $sort_args;
-	} else {
-		return $sort_args;
-	}
-}
-add_filter( 'woocommerce_get_catalog_ordering_args', 'skyverge_alphabetical_woocommerce_shop_ordering' );
-
-
-function skyverge_alphabetical_woocommerce_catalog_orderby( $sortby ) {
-	$alphabetical_enabled = get_option('wc_alphabetical_product_sorting');
-
-	if($alphabetical_enabled == 'yes') {
-		$sortby['alphabetical'] = __( 'Sort by name: A to Z', 'woocommerce' );
-		return $sortby;
-	} else {
-		return $sortby;
-	}
-}
-add_filter( 'woocommerce_default_catalog_orderby_options', 'skyverge_alphabetical_woocommerce_catalog_orderby' );
-add_filter( 'woocommerce_catalog_orderby', 'skyverge_alphabetical_woocommerce_catalog_orderby' );
-
-
-/**
- * Add reverse alphabetical sorting option to WC Default Product Sorting / shop pages if enabled
- *
- *@since 1.1.0
+ * The WC_Extra_Sorting_Options global object
+ * @name $wc_customizer
+ * @global WC_Customizer $GLOBALS['wc_customizer']
  */
-function skyverge_reverse_alphabetical_woocommerce_shop_ordering( $sort_args ) {
-
-	$reverse_alpha_enabled = get_option('wc_reverse_alphabetical_product_sorting');
-
-	if($reverse_alpha_enabled == 'yes') {
-		$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
-
-		if ( 'reverse_alphabetical' == $orderby_value ) {
-			$sort_args['orderby'] = 'title';
-			$sort_args['order'] = 'desc';
-			$sort_args['meta_key'] = '';
-		}
-
-		return $sort_args;
-	} else {
-		return $sort_args;
-	}
-}
-add_filter( 'woocommerce_get_catalog_ordering_args', 'skyverge_reverse_alphabetical_woocommerce_shop_ordering' );
-
-
-function skyverge_reverse_alpha_woocommerce_catalog_orderby( $sortby ) {
-	$reverse_alpha_enabled = get_option('wc_reverse_alphabetical_product_sorting');
-
-	if($reverse_alpha_enabled == 'yes') {
-		$sortby['reverse_alphabetical'] = __( 'Sort by name: Z to A', 'woocommerce' );
-		return $sortby;
-	} else {
-		return $sortby;
-	}
-}
-add_filter( 'woocommerce_default_catalog_orderby_options', 'skyverge_reverse_alpha_woocommerce_catalog_orderby' );
-add_filter( 'woocommerce_catalog_orderby', 'skyverge_reverse_alpha_woocommerce_catalog_orderby' );
-
-/**
- * Add "On Sale" sorting to WC Default Product Sorting / shop pages if enabled
- *
- * @since 1.2.0
- */
-function skyverge_on_sale_shop_ordering( $sort_args ) {
-
-	$on_sale_enabled = get_option('wc_on_sale_product_sorting');
-
-	if( $on_sale_enabled == 'yes') {
-		$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
-		if ( 'on_sale' == $orderby_value ) {
-
-			$sort_args['orderby'] = 'meta_value_num';
-			$sort_args['order'] = 'desc';
-			$sort_args['meta_key'] = '_sale_price';
-
-		}
-		return $sort_args;
-	} else {
-		return $sort_args;
-	}
-
-}
-add_filter( 'woocommerce_get_catalog_ordering_args', 'skyverge_on_sale_shop_ordering' );
-
-function skyverge_on_sale_catalog_orderby( $sortby ) {
-
-	$on_sale_enabled = get_option('wc_on_sale_product_sorting');
-
-	if($on_sale_enabled == 'yes') {
-		$sortby['on_sale'] = __( 'Show sale items first', 'woocommerce' );
-		return $sortby;
-	} else {
-		return $sortby;
-	}
-
-}
-add_filter( 'woocommerce_default_catalog_orderby_options', 'skyverge_on_sale_catalog_orderby' );
-add_filter( 'woocommerce_catalog_orderby', 'skyverge_on_sale_catalog_orderby' );
-
-
-/**
- * Add random sorting option to WC Default Product Sorting / shop pages if enabled
- *
- * @since 1.0.0
- */
-function skyverge_random_woocommerce_shop_ordering( $sort_args ) {
-	$random_enabled = get_option('wc_random_product_sorting');
-
-	if($random_enabled == 'yes') {
-		$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
-
-		if ( 'random_list' == $orderby_value ) {
-			$sort_args['orderby'] = 'rand';
-			$sort_args['order'] = '';
-			$sort_args['meta_key'] = '';
-		}
-
-		return $sort_args;
-	} else {
-		return $sort_args;
-	}
-}
-add_filter( 'woocommerce_get_catalog_ordering_args', 'skyverge_random_woocommerce_shop_ordering' );
-
-function skyverge_random_woocommerce_catalog_orderby( $sortby ) {
-	$random_enabled = get_option('wc_random_product_sorting');
-
-	if($random_enabled == 'yes') {
-		$sortby['random_list'] = __( 'Sort by: random order', 'woocommerce' );
-
-		return $sortby;
-	} else {
-		return $sortby;
-	}
-}
-add_filter( 'woocommerce_default_catalog_orderby_options', 'skyverge_random_woocommerce_catalog_orderby' );
-add_filter( 'woocommerce_catalog_orderby', 'skyverge_random_woocommerce_catalog_orderby' );
+$GLOBALS['wc_extra_sorting_options'] = new WC_Extra_Sorting_Options();
