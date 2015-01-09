@@ -5,8 +5,8 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=paypal@s
 Requires at least: 3.8
 Tested up to: 4.1
 Requires WooCommerce at least: 2.1
-Tested WooCommerce up to: 2.2
-Stable Tag: 2.0.0
+Tested WooCommerce up to: 2.3
+Stable Tag: 2.0.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -76,7 +76,7 @@ Don't worry, it does :). It's possible to sort by stock, but this will work for 
 If you don't manage your stock, you should **disable** this option - it will simply work as an alphabetical sort if all products are just "In Stock" without inventory managed.
 
 = Why can't on-sale sorting work for variable products? =
-Simple products and variable products use two different "keys" to indicate if they're on stock. As a result, we can't order products using two different keys, so we've used the key that indicates a simple product's sale price in this plugin.
+Simple products and variable products use two different "keys" to indicate if they're on sale. As a result, we can't order products using two different keys, so we've used the key that indicates a simple product's sale price in this plugin.
 
 We don't anticipate changing this in the foreseeable future, as we've spent a couple hours trying to get the custom search query to work, but WooCommerce core adds search parameters that conflict with it, and we haven't found a suitable work-around.
 
@@ -89,6 +89,10 @@ Yes you can! Join in on our [GitHub repository](https://github.com/bekarice/wooc
 3. Change sorting label (in shop dropdown) with the [Say What plugin](https://wordpress.org/plugins/say-what/)
 
 == Changelog ==
+
+= 2015.01.09 - version 2.0.1 =
+ * Fix: Squished a bug affecting random sorting
+
 = 2015.01.05 - version 2.0.0 =
  * Misc: Refactored to simplify code and add upgrade routine
  * Feature: Added "Featured" sorting
