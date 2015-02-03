@@ -6,7 +6,7 @@ Requires at least: 3.8
 Tested up to: 4.1
 Requires WooCommerce at least: 2.1
 Tested WooCommerce up to: 2.3
-Stable Tag: 2.0.1
+Stable Tag: 2.1.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -16,7 +16,7 @@ Rename the default product sorting option and add up to 6 new sorting options in
 
 WooCommerce Extra Product Sorting Options provides options that extend the default WooCommerce orderby options on the shop page. You can optionally set a new name for the default sorting (helpful if you've used this to create a custom sorting order), and can enable up to **6 new sorting options**: alphabetical, reverse alphabetical, on sale, featured, availability, and random product sorting.
 
-> **Requires: WooCommerce 2.1+**, Compatible with WooCommerce 2.2
+> **Requires: WooCommerce 2.1+**, Compatible with WooCommerce 2.2 &amp; 2.3
 
 = Features =
 Includes options to:
@@ -42,7 +42,7 @@ You can add the option to sort items by sale status - there's a sorting option t
 Finally, you can add a "randomized" sorting option just for fun - any time this sorting is selected, the product order will be randomized when the shop page is viewed.
 
 = Looking to remove sorting options? =
-We have a compatible plugin that will let you remove core WooCommerce sorting options, such as the default sorting method. You can check out the [WooCommerce Remove Product Sorting](wordpress.org/plugins/woocommerce-remove-product-sorting/) plugin page for more details.
+We have a compatible plugin that will let you remove core WooCommerce sorting options, such as the default sorting method. You can check out the [WooCommerce Remove Product Sorting](http://www.skyverge.com/product/woocommerce-remove-product-sorting/) plugin page for more details.
 
 = More Details =
  - See the [product page](http://www.skyverge.com/product/woocommerce-extra-product-sorting-options/) for full details.
@@ -60,7 +60,7 @@ We have a compatible plugin that will let you remove core WooCommerce sorting op
 
 == Frequently Asked Questions ==
 = Do I need to rename the default sorting? =
-Nope. You can use this plugin to simply add alphabetical, reverse alphabetical, and randomized sorting to your shop pages. Any of the settings are entirely optional.
+Nope. You can use this plugin to simply add new sorting options to your shop pages. Any of the settings are entirely optional.
 
 = How do I set my new sorting option as the default? =
 When you check to enable these options, save your Product settings. You'll now be able to select your new options as a default under the "Default Product Sorting" list.
@@ -89,6 +89,9 @@ Yes you can! Join in on our [GitHub repository](https://github.com/bekarice/wooc
 3. Change sorting label (in shop dropdown) with the [Say What plugin](https://wordpress.org/plugins/say-what/)
 
 == Changelog ==
+
+= 2015.02.03 - version 2.1.0 =
+ * Misc: WooCommerce 2.3 compatibility
 
 = 2015.01.09 - version 2.0.1 =
  * Fix: Squished a bug affecting random sorting
