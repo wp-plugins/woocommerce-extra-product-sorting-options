@@ -5,10 +5,10 @@
  * Description: Rename default sorting and optionally extra product sorting options.
  * Author: SkyVerge
  * Author URI: http://www.skyverge.com/
- * Version: 2.1.1
+ * Version: 2.2.0
  * Text Domain: wc-extra-sorting-options
  *
- * Copyright: (c) 2012-2015 SkyVerge, Inc. (info@skyverge.com)
+ * Copyright: (c) 2014-2015 SkyVerge, Inc. (info@skyverge.com)
  *
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -16,7 +16,7 @@
  * @package   WC-Extra-Product-Sorting-Options
  * @author    SkyVerge
  * @category  Admin
- * @copyright Copyright (c) 2012-2015, SkyVerge, Inc.
+ * @copyright Copyright (c) 2014-2015, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  *
  */
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 class WC_Extra_Sorting_Options {
 	
 	
-	const VERSION = '2.1.0';
+	const VERSION = '2.2.0';
 	
 	
 	public function __construct() {
@@ -100,7 +100,7 @@ class WC_Extra_Sorting_Options {
 					array(
 						'name'     => __( 'Add Product Sorting:', 'wc-extra-sorting-options' ),
 						'desc_tip' => __( 'Select sorting options to add to your shop. "Available Stock" sorts products with the most stock first.', 'wc-extra-sorting-options' ),
-						'desc'     => '<br/>' . __( '&quot;On-sale First&quot; shows simple products on sale first; <a href="https://wordpress.org/plugins/woocommerce-extra-product-sorting-options/faq/" target="_blank">see documentation</a> for more details.', 'wc-extra-sorting-options' ),
+						'desc'     => '<br/>' . sprintf( __( '"On-sale First" shows <strong>simple</strong> products on sale first; <a href="%s" target="_blank">see documentation</a> for more details.', 'wc-extra-sorting-options' ), 'https://wordpress.org/plugins/woocommerce-extra-product-sorting-options/faq/' ),
 						'id'       => 'wc_extra_product_sorting_options',
 						'type'     => 'multiselect',
 						'class'    => 'chosen_select',
@@ -166,7 +166,7 @@ class WC_Extra_Sorting_Options {
 					break;
 				
 				case 'randomize':
-					$sortby['randomize'] = __( 'Sort by: random order', 'wc-extra-sorting-options' );
+					$sortby['rand'] = __( 'Sort by: random order', 'wc-extra-sorting-options' );
 					break;
 				 
 			}
@@ -184,8 +184,10 @@ class WC_Extra_Sorting_Options {
 	*/
 	public function add_new_shop_ordering_args( $sort_args ) {
 		
-		$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
+		$orderby_value = isset( $_GET['orderby'] ) ? wc_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
 
+		$fallback = apply_filters( 'wc_extra_sorting_options_fallback', 'title' );
+		
 		switch( $orderby_value ) {
 	
 			case 'alphabetical':
@@ -200,28 +202,19 @@ class WC_Extra_Sorting_Options {
 				break;
 				
 			case 'by_stock':
-				$sort_args['orderby'] = 'meta_value_num';
-				$sort_args['order'] = 'desc';
+				$sort_args['orderby'] = array( 'meta_value_num' => 'DESC', $fallback => 'ASC' );
 				$sort_args['meta_key'] = '_stock';
 				break;
 				
 								
 			case 'on_sale_first':
-				$sort_args['orderby'] = 'meta_value_num';
-				$sort_args['order'] = 'desc';
+				$sort_args['orderby'] = array( 'meta_value_num' => 'DESC', $fallback => 'ASC' );
 				$sort_args['meta_key'] = '_sale_price';
 				break;
 				
 			case 'featured_first':
-				$sort_args['orderby'] = 'meta_value';
-				$sort_args['order'] = 'desc';
+				$sort_args['orderby'] = array( 'meta_value' => 'DESC', $fallback => 'ASC' );
 				$sort_args['meta_key'] = '_featured';
-				break;
-				
-			case 'randomize':
-				$sort_args['orderby'] = 'rand';
-				$sort_args['order'] = '';
-				$sort_args['meta_key'] = '';
 				break;
 		
 		}
