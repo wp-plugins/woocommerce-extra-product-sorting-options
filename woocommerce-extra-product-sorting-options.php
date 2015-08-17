@@ -5,7 +5,7 @@
  * Description: Rename default sorting and optionally extra product sorting options.
  * Author: SkyVerge
  * Author URI: http://www.skyverge.com/
- * Version: 2.2.1
+ * Version: 2.2.2
  * Text Domain: wc-extra-sorting-options
  *
  * Copyright: (c) 2014-2015 SkyVerge, Inc. (info@skyverge.com)
@@ -35,7 +35,11 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 class WC_Extra_Sorting_Options {
 	
 	
-	const VERSION = '2.2.1';
+	const VERSION = '2.2.2';
+	
+	
+	/** @var WC_Extra_Sorting_Options single instance of this plugin */
+	protected static $instance;
 	
 	
 	public function __construct() {
@@ -57,6 +61,9 @@ class WC_Extra_Sorting_Options {
 			// add settings
 			add_filter( 'woocommerce_product_settings', array( $this, 'add_settings' ) );
 			
+			// add plugin links
+			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_plugin_links' ) );
+			
 			// run every time
 			$this->install();
 		}
@@ -74,8 +81,44 @@ class WC_Extra_Sorting_Options {
 	}
 	
 	
+	/** Helper methods ******************************************************/
+	
+	
 	/**
-	 *Add Settings to WooCommerce Settings > Products page after "Default Product Sorting" setting
+	 * Main Extra Sorting Instance, ensures only one instance is/can be loaded
+	 *
+	 * @since 2.2.2
+	 * @see wc_extra_sorting_options()
+	 * @return WC_Extra_Sorting_Options
+	 */
+	public static function instance() {
+    	if ( is_null( self::$instance ) ) {
+       		self::$instance = new self();
+   		}
+    	return self::$instance;
+	}
+	
+	
+	/**
+	 * Adds plugin page links
+	 * 
+	 * @since 2.2.2
+	 * @param array $links all plugin links
+	 * @return array $links all plugin links + our custom links (i.e., "Settings")
+	 */
+	public function add_plugin_links( $links ) {
+	
+		$plugin_links = array(
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=products&section=display' ) . '">' . __( 'Configure', 'wc-extra-sorting-options' ) . '</a>',
+			'<a href="https://wordpress.org/support/plugin/woocommerce-extra-product-sorting-options" target="_blank">' . __( 'Support', 'wc-extra-sorting-options' ) . '</a>',
+		);
+		
+		return array_merge( $plugin_links, $links );
+	}
+	
+	
+	/**
+	 * Add Settings to WooCommerce Settings > Products page after "Default Product Sorting" setting
 	 *
 	 * @since 1.0.0
 	 */
@@ -124,6 +167,8 @@ class WC_Extra_Sorting_Options {
 		return $updated_settings;
 	}
 	
+	
+	/** Plugin methods ******************************************************/
 	
 	
 	/**
@@ -186,7 +231,8 @@ class WC_Extra_Sorting_Options {
 		
 		$orderby_value = isset( $_GET['orderby'] ) ? wc_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
 
-		$fallback = apply_filters( 'wc_extra_sorting_options_fallback', 'title' );
+		$fallback = apply_filters( 'wc_extra_sorting_options_fallback', 'title', $orderby_value );
+		$fallback_order = apply_filters( 'wc_extra_sorting_options_fallback_order', 'ASC', $orderby_value );
 		
 		switch( $orderby_value ) {
 	
@@ -202,18 +248,18 @@ class WC_Extra_Sorting_Options {
 				break;
 				
 			case 'by_stock':
-				$sort_args['orderby'] = array( 'meta_value_num' => 'DESC', $fallback => 'ASC' );
+				$sort_args['orderby'] = array( 'meta_value_num' => 'DESC', $fallback => $fallback_order );
 				$sort_args['meta_key'] = '_stock';
 				break;
 				
 								
 			case 'on_sale_first':
-				$sort_args['orderby'] = array( 'meta_value_num' => 'DESC', $fallback => 'ASC' );
+				$sort_args['orderby'] = array( 'meta_value_num' => 'DESC', $fallback => $fallback_order );
 				$sort_args['meta_key'] = '_sale_price';
 				break;
 				
 			case 'featured_first':
-				$sort_args['orderby'] = array( 'meta_value' => 'DESC', $fallback => 'ASC' );
+				$sort_args['orderby'] = array( 'meta_value' => 'DESC', $fallback => $fallback_order );
 				$sort_args['meta_key'] = '_featured';
 				break;
 		
@@ -288,8 +334,21 @@ class WC_Extra_Sorting_Options {
 
 
 /**
- * The WC_Extra_Sorting_Options global object
+ * Returns the One True Instance of WC Extra Sorting
+ *
+ * @since 2.2.2
+ * @return WC_Extra_Sorting_Options
+ */
+function wc_extra_sorting_options() {
+    return WC_Extra_Sorting_Options::instance();
+}
+
+
+/**
+ * The WC_Extra_Sorting_Options global object, exists only for backwards compat
+ *
+ * @deprecated 2.2.2
  * @name $wc_extra_sorting_options
  * @global WC_Extra_Sorting_Options $GLOBALS['wc_extra_sorting_options']
  */
-$GLOBALS['wc_extra_sorting_options'] = new WC_Extra_Sorting_Options();
+$GLOBALS['wc_extra_sorting_options'] = wc_extra_sorting_options();
